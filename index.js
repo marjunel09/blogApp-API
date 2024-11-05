@@ -21,7 +21,8 @@ const userRoutes = require("./routes/user");
 const corsOptions = {
 	origin: [
     'http://localhost:8000', 
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://blog-app-client-nine.vercel.app/'
   ],
 	credentials: true,
 	optionsSuccessStatus: 200, 
