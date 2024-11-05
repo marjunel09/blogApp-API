@@ -1,4 +1,5 @@
 const Blog = require("../models/Blog");
+const User = require('../models/User');
 const { errorHandler } = require('../auth');
 
 module.exports.addBlog = (req, res) => {
@@ -129,34 +130,44 @@ module.exports.getBlogById = (req, res) => {
     .catch(error => errorHandler(error, req, res)); 
 };
 
-module.exports.addBlogComment = (req, res) => {
+module.exports.addBlogComment = async (req, res) => {
     const { text } = req.body;
-    const user = req.user.email; // Assuming user info is stored in req.user after verification
+    const userEmail = req.user.email; // Get the user's email
 
     if (!text) {
         return res.status(400).send({ message: 'Comment text is required' });
     }
 
-    const comment = {
-        text,
-        user,
-    };
+    try {
+        // Find the user by their email to get the username
+        const user = await User.findOne({ email: userEmail });
 
-    return Blog.findByIdAndUpdate(
-        req.params.blogId,
-        { $push: { comments: comment } },
-        { new: true }
-    )
-    .then(blog => {
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        const comment = {
+            text,
+            user: user.username, // Use the username here
+        };
+
+        const blog = await Blog.findByIdAndUpdate(
+            req.params.blogId,
+            { $push: { comments: comment } },
+            { new: true }
+        );
+
         if (!blog) {
             return res.status(404).send({ message: 'Blog post not found' });
         }
+
         return res.status(201).send({
             message: 'Comment added successfully',
             blog,
         });
-    })
-    .catch(error => errorHandler(error, req, res));
+    } catch (error) {
+        return errorHandler(error, req, res);
+    }
 };
 
 module.exports.getBlogComments = (req, res) => {
